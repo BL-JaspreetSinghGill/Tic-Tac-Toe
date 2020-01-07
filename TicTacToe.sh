@@ -26,9 +26,28 @@ displayBoard () {
 	done;
 }
 
+getRandomValue () {
+	echo $((RANDOM%2));
+}
+
+getUserLetter () {
+	userValue=$(getRandomValue);
+
+	if [[ $userValue -eq 1 ]]
+	then
+		userLetter="X";
+	else
+		userLetter="O";
+	fi;
+
+	echo "USER LETTER : " $userLetter;
+}
+
 ticTacToeMain () {
 	assignInitialValuesToBoard;
 	displayBoard;
+
+	getUserLetter;
 }
 
 ticTacToeMain;
