@@ -36,11 +36,25 @@ getUserLetter () {
 	if [[ $userValue -eq 1 ]]
 	then
 		userLetter="X";
+		computerLetter="O";
 	else
 		userLetter="O";
+		computerLetter="X";
 	fi;
 
 	echo "USER LETTER : " $userLetter;
+	echo "COMPUTER LETTER : " $computerLetter;
+}
+
+checkForFirstTurn () {
+	randomValue=$(getRandomValue);
+
+	if [[ $randomValue -eq 1 ]]
+	then
+		echo "YOU WILL PLAY FIRST";
+	else
+		echo "COMPUTER WILL PLAY FIRST";
+	fi;
 }
 
 ticTacToeMain () {
@@ -48,6 +62,7 @@ ticTacToeMain () {
 	displayBoard;
 
 	getUserLetter;
+	checkForFirstTurn;
 }
 
 ticTacToeMain;
