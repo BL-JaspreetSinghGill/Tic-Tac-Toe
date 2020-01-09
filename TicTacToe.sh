@@ -105,17 +105,8 @@ getUserCells () {
 	checkValidCells;
 }
 
-getComputerCellRandomValue () {
-	echo $((RANDOM%3+1));
-}
-
 getComputerCells () {
-	computerChoice="";
-
-	for (( i=0; i<2; i++ ))
-	do
-		computerChoice="$computerChoice""$(getComputerCellRandomValue)";
-	done;
+	computerChoice="11";
 }
 
 storeInDictionary () {
