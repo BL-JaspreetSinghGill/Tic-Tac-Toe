@@ -77,10 +77,17 @@ getValidationMessage () {
 }
 
 checkValidCells () {
-	if [ "${ticTacToeDictionary[$userChoice]}" = "X" -o "${ticTacToeDictionary[$userChoice]}" = "O" ]
+	isValidFlag=$1;
+
+	if [ "${ticTacToeDictionary[$choice]}" = "X" -o "${ticTacToeDictionary[$choice]}" = "O" ]
 	then
-		getValidationMessage "CELL ALREADY OCCUPIED PLEASE CHOOSE ANOTHER CELL!!!!!!";
-		getUserCells;
+		if [ "$isValidFlag" = "true" ]
+		then
+			getValidationMessage "CELL ALREADY OCCUPIED PLEASE CHOOSE ANOTHER CELL!!!!!!";
+			getUserCells;
+		else
+			getComputerCells;
+		fi;
 	fi;
 }
 
@@ -103,12 +110,24 @@ getUserCells () {
 
 	userChoice="$userRow""$userColumn";
 	choice="$userChoice";
-	checkValidCells;
+	checkValidCells "true";
+}
+
+getComputerCellRandomValue () {
+	echo $((RANDOM%3+1));
 }
 
 getComputerCells () {
-	getUserCells;
-	choice="$userChoice";
+	computerChoice="";
+
+	for (( i=0; i<2; i++ ))
+	do
+		computerChoice="$computerChoice""$(getComputerCellRandomValue)";
+	done;
+
+	choice="$computerChoice";
+	echo "COMPUTER PLAYED : " $choice;
+	checkValidCells "false";
 }
 
 storeInDictionary () {
