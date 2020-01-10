@@ -102,11 +102,13 @@ getUserCells () {
 	fi;
 
 	userChoice="$userRow""$userColumn";
+	choice="$userChoice";
 	checkValidCells;
 }
 
 getComputerCells () {
-	computerChoice="11";
+	getUserCells;
+	choice="$userChoice";
 }
 
 storeInDictionary () {
@@ -116,13 +118,138 @@ storeInDictionary () {
 	ticTacToeDictionary[$position]="$value";
 }
 
+checkForTurn () {
+	firstValue=$1;
+	secondValue=$2;
+	isTurnFlag=$3;
+
+	if [ "$firstValue" = "$secondValue" -o "$isTurnFlag" = "true" ]
+	then
+		echo "USER TURN";
+		turn="USER";
+		player=getUserCells;
+		letter=$userLetter;
+		isTurnFlag="false";
+	else
+		echo "COMPUTER TURN";
+		turn="COMPUTER";
+		player=getComputerCells;
+		letter=$computerLetter;
+		isTurnFlag="true";
+	fi;
+}
+
+playMove () {
+	$player;
+   storeInDictionary $choice $letter;
+}
+
+checkWinCond () {
+	val=$1;  #rowValue, columnValue, leftDiagonalValue or rightDiagonalValue
+	message=$2;
+
+	if [ "$val" = "XXX" -o "$val" = "OOO" ]
+	then
+		echo "$message";
+		echo "YEAH $turn WIN!!!!!!"; 
+		exit 0;
+	fi;
+}
+
+checkForRowElements () {
+	for (( a=1; a<=$ROWS; a++ ))
+	do
+		rowValue="";
+		for (( b=1; b<=$COLUMNS; b++ ))
+		do
+			if [ "${ticTacToeDictionary[$a$b]}" = "X" -o "${ticTacToeDictionary[$a$b]}" = "O" ]
+			then
+				rowValue="$rowValue""${ticTacToeDictionary[$a$b]}";
+			fi;
+		done;
+		checkWinCond "$rowValue" "ROW MATCHED GAME END";
+	done;
+}
+
+checkForColumnElements () {
+	diagonalValue="";
+
+	for (( a=1; a<=$ROWS; a++ ))
+	do
+		columnValue="";
+		for (( b=1; b<=$COLUMNS; b++ ))
+		do
+			if [ "${ticTacToeDictionary[$b$a]}" = "X" -o "${ticTacToeDictionary[$b$a]}" = "O" ]
+			then
+				columnValue="$columnValue""${ticTacToeDictionary[$b$a]}";
+			fi;
+		done;
+		checkWinCond "$columnValue" "COLUMN MATCHED GAME END";
+	done;
+}
+
+checkForLeftDiagonalElements () {
+	leftDiagonalValue="";
+
+	for (( a=1; a<=$ROWS; a++ ))
+	do
+		for (( b=1; b<=$COLUMNS; b++ ))
+		do
+			if [ "$a" = "$b" ] && [ "${ticTacToeDictionary[$a$b]}" = "X" -o "${ticTacToeDictionary[$a$b]}" = "O" ]
+			then
+				leftDiagonalValue="$leftDiagonalValue""${ticTacToeDictionary[$a$b]}";
+			fi;
+		done;
+	done;
+
+	checkWinCond "$leftDiagonalValue" "LEFT DIAGONAL MATCHED GAME END";
+}
+
+checkForRightDiagonalElements () {
+   rightDiagonalValue="";
+	a=1;
+	b=$ROWS;
+
+	for (( c=1; c<=$ROWS; c++ ))
+	do
+		if [ "${ticTacToeDictionary[$a$b]}" = "X" -o "${ticTacToeDictionary[$a$b]}" = "O" ]
+		then
+   		rightDiagonalValue="$rightDiagonalValue""${ticTacToeDictionary[$a$b]}";
+   	fi;
+		(( a++ ));
+		(( b-- ));
+	done;
+
+   checkWinCond "$rightDiagonalValue" "RIGHT DIAGONAL MATCHED GAME END";
+}
+
+checkForDiagonalElements () {
+	checkForLeftDiagonalElements;
+	checkForRightDiagonalElements;
+}
+
+checkForWin () {
+	checkForRowElements;
+	checkForColumnElements;
+	checkForDiagonalElements;
+}
+
 playGame () {
-	getComputerCells;
-	storeInDictionary $computerChoice $computerLetter;
-	displayBoard;
-	getUserCells;
-	storeInDictionary $userChoice $userLetter;
-   displayBoard;
+	checkForTurn "$firstTurn" "user" "";
+
+	for (( k=1; k<=$(($ROWS*$COLUMNS)); k++ ))
+	do
+		playMove;
+		displayBoard;
+		if [ $k -gt $((2*$ROWS-2)) ]
+		then
+			checkForWin;
+		fi;
+		if [ $k -ne $(($ROWS*$COLUMNS)) ]
+		then
+			checkForTurn "tempOne" "tempTwo" "$isTurnFlag";
+		fi;
+	done;
 }
 
 ticTacToeMain () {
@@ -132,6 +259,8 @@ ticTacToeMain () {
 	getUserLetter;
 	checkForFirstTurn;
 	playGame;
+
+	echo "MATCHED TIED";
 }
 
 ticTacToeMain;
