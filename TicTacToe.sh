@@ -81,9 +81,9 @@ checkValidCells () {
 
 	if [ "${ticTacToeDictionary[$choice]}" = "X" -o "${ticTacToeDictionary[$choice]}" = "O" ]
 	then
+		getValidationMessage "CELL ALREADY OCCUPIED PLEASE CHOOSE ANOTHER CELL!!!!!!";
 		if [ "$isValidFlag" = "true" ]
 		then
-			getValidationMessage "CELL ALREADY OCCUPIED PLEASE CHOOSE ANOTHER CELL!!!!!!";
 			getUserCells;
 		else
 			getComputerCells;
@@ -117,13 +117,148 @@ getComputerCellRandomValue () {
 	echo $((RANDOM%3+1));
 }
 
-getComputerCells () {
-	computerChoice="";
+getComputerWinningPosition () {
+	counter=$1; #leftDiagonalCounter, rightDiagonalCounter, rowCounter and columnCounter.
+	compPosition=$2; #computer diagonal(left, right), row and column Position.
 
+	if [ $counter -eq $(($ROWS-1)) ]
+	then
+		echo $compPosition;
+		break;
+   fi;
+}
+
+#HERE COMPUTER WILL CHECK LEFT DIAGONAL AND PLAY ACCORDINGLY TO WIN.
+checkForComputerLeftDiagonalWinCell () {
+	leftDiagonalCounter=0;
+	computerLeftDiagonalPosition="";
+
+	for (( a=1; a<=$ROWS; a++ ))
+	do
+		for (( b=1; b<=$COLUMNS; b++ ))
+		do
+			if [ "$a" = "$b" -a "${ticTacToeDictionary[$a$b]}" = "$computerLetter" ]
+			then
+				(( leftDiagonalCounter++ ));
+			elif [ "$a" = "$b" -a "${ticTacToeDictionary[$a$b]}" != "$userLetter" ]
+			then
+				computerLeftDiagonalPosition=$a$b;
+			fi;
+		done;
+	done;
+
+	getComputerWinningPosition $leftDiagonalCounter $computerLeftDiagonalPosition;
+}
+
+#HERE COMPUTER WILL CHECK RIGHT DIAGONAL AND PLAY ACCORDINGLY TO WIN.
+checkForComputerRightDiagonalWinCell () {
+	rightDiagonalCounter=0;
+	computerRightDiagonalPosition="";
+	a=1;
+	b=$ROWS;
+
+	for (( c=1; c<=$ROWS; c++ ))
+	do
+		if [ "${ticTacToeDictionary[$a$b]}" = "$computerLetter" ]
+		then
+			(( rightDiagonalCounter++ ));
+		elif [ "${ticTacToeDictionary[$a$b]}" != "$userLetter" ]
+		then
+			computerRightDiagonalPosition=$a$b;
+		fi;
+
+		(( a++ ));
+		(( b-- ));
+	done;
+
+	getComputerWinningPosition $rightDiagonalCounter $computerRightDiagonalPosition;
+}
+
+#HERE COMPUTER WILL CHECK EACH ROW AND PLAY ACCORDINGLY TO WIN.
+checkForComputerRowWinCell () {
+	for (( a=1; a<=$ROWS; a++ ))
+	do
+		rowCounter=0;
+		computerRowPosition="";
+		for (( b=1; b<=$COLUMNS; b++ ))
+		do
+			if [ "${ticTacToeDictionary[$a$b]}" = "$computerLetter" ]
+			then
+				((rowCounter++));
+			elif [ "${ticTacToeDictionary[$a$b]}" != "$userLetter" ]
+			then
+				computerRowPosition=$a$b;
+			fi;
+		done;
+
+		getComputerWinningPosition $rowCounter $computerRowPosition;
+	done;
+}
+
+#HERE COMPUTER WILL CHECK EACH COLUMN AND PLAY ACCORDINGLY TO WIN.
+checkForComputerColumnWinCell () {
+	for (( a=1; a<=$ROWS; a++ ))
+	do
+		columnCounter=0;
+		computerColumnPosition="";
+		for (( b=1; b<=$COLUMNS; b++ ))
+		do
+			if [ "${ticTacToeDictionary[$b$a]}" = "$computerLetter" ]
+			then
+				((columnCounter++));
+			elif [ "${ticTacToeDictionary[$b$a]}" != "$userLetter" ]
+			then
+				computerColumnPosition=$b$a;
+			fi;
+		done;
+
+		getComputerWinningPosition $columnCounter $computerColumnPosition;
+	done;
+}
+
+#HERE COMPUTER WILL PLAY THE MOVE TO WIN THE GAME.
+checkForComputerWinCell () {
+	computerPosition="";
+
+	computerPosition=$(checkForComputerLeftDiagonalWinCell);
+	if [ "$computerPosition" = "" ]
+	then
+		computerPosition=$(checkForComputerRightDiagonalWinCell);
+		if [ "$computerPosition" = "" ]
+		then
+			computerPosition=$(checkForComputerRowWinCell);
+			if [ "$computerPosition" = ""  ]
+			then
+				computerPosition=$(checkForComputerColumnWinCell);
+			fi;
+		fi;
+	fi;
+
+	echo $computerPosition;
+}
+
+getComputerCellsByRandomValue () {
 	for (( i=0; i<2; i++ ))
 	do
 		computerChoice="$computerChoice""$(getComputerCellRandomValue)";
 	done;
+}
+
+getComputerCells () {
+	computerChoice="";
+
+	if [ $k -gt $((2*$ROWS-2)) ]
+	then
+		computerPosition=$(checkForComputerWinCell);
+		if [ "$computerPosition" != "" ]
+		then
+			computerChoice=$computerPosition;
+		else
+			getComputerCellsByRandomValue;
+		fi;
+	else
+		getComputerCellsByRandomValue;
+	fi;
 
 	choice="$computerChoice";
 	echo "COMPUTER PLAYED : " $choice;
@@ -170,7 +305,7 @@ checkWinCond () {
 	if [ "$val" = "XXX" -o "$val" = "OOO" ]
 	then
 		echo "$message";
-		echo "YEAH $turn WIN!!!!!!"; 
+		echo "YEAH $turn WIN!!!!!!";
 		exit 0;
 	fi;
 }
