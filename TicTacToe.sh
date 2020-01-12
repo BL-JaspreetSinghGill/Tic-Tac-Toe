@@ -5,6 +5,17 @@ COLUMNS=3;
 
 declare -A ticTacToeDictionary;
 
+assignWinningValues () {
+	winningXValue="";
+	winningOValue="";
+
+	for (( a=1; a<=$ROWS; a++ ))
+	do
+		winningXValue="$winningXValue""X";
+		winningOValue="$winningOValue""O";
+	done;
+}
+
 assignInitialValuesToBoard () {
 	for (( i=1; i<=$ROWS; i++ ))
 	do
@@ -62,11 +73,11 @@ checkForFirstTurn () {
 checkForValidUserCells () {
 	userChoice=$1;
 
-	if [[ $userChoice -ne 1 && $userChoice -ne 2 && $userChoice -ne 3 ]]
+	if [[ $userChoice -gt 0 && $userChoice -le $ROWS ]]
 	then
-		echo "false";
-	else
 		echo "true";
+	else
+		echo "false";
 	fi;
 }
 
@@ -114,7 +125,7 @@ getUserCells () {
 }
 
 getComputerCellRandomValue () {
-	echo $((RANDOM%3+1));
+	echo $((RANDOM%$ROWS+1));
 }
 
 getComputerWinningPosition () {
@@ -128,8 +139,10 @@ getComputerWinningPosition () {
    fi;
 }
 
-#HERE COMPUTER WILL CHECK LEFT DIAGONAL AND PLAY ACCORDINGLY TO WIN.
-checkForComputerLeftDiagonalWinCell () {
+#HERE COMPUTER WILL CHECK LEFT DIAGONAL ELEMENTS AND PLAY ACCORDINGLY TO WIN OR BLOCK.
+checkForComputerLeftDiagonalWinBlockCell () {
+	playerLetter=$1;
+	opponentLetter=$2;
 	leftDiagonalCounter=0;
 	computerLeftDiagonalPosition="";
 
@@ -137,10 +150,10 @@ checkForComputerLeftDiagonalWinCell () {
 	do
 		for (( b=1; b<=$COLUMNS; b++ ))
 		do
-			if [ "$a" = "$b" -a "${ticTacToeDictionary[$a$b]}" = "$computerLetter" ]
+			if [ "$a" = "$b" -a "${ticTacToeDictionary[$a$b]}" = "$playerLetter" ]
 			then
 				(( leftDiagonalCounter++ ));
-			elif [ "$a" = "$b" -a "${ticTacToeDictionary[$a$b]}" != "$userLetter" ]
+			elif [ "$a" = "$b" -a "${ticTacToeDictionary[$a$b]}" != "$opponentLetter" ]
 			then
 				computerLeftDiagonalPosition=$a$b;
 			fi;
@@ -150,8 +163,10 @@ checkForComputerLeftDiagonalWinCell () {
 	getComputerWinningPosition $leftDiagonalCounter $computerLeftDiagonalPosition;
 }
 
-#HERE COMPUTER WILL CHECK RIGHT DIAGONAL AND PLAY ACCORDINGLY TO WIN.
-checkForComputerRightDiagonalWinCell () {
+#HERE COMPUTER WILL CHECK RIGHT DIAGONAL ELEMENTS AND PLAY ACCORDINGLY TO WIN OR BLOCK.
+checkForComputerRightDiagonalWinBlockCell () {
+	playerLetter=$1;
+	opponentLetter=$2;
 	rightDiagonalCounter=0;
 	computerRightDiagonalPosition="";
 	a=1;
@@ -159,10 +174,10 @@ checkForComputerRightDiagonalWinCell () {
 
 	for (( c=1; c<=$ROWS; c++ ))
 	do
-		if [ "${ticTacToeDictionary[$a$b]}" = "$computerLetter" ]
+		if [ "${ticTacToeDictionary[$a$b]}" = "$playerLetter" ]
 		then
 			(( rightDiagonalCounter++ ));
-		elif [ "${ticTacToeDictionary[$a$b]}" != "$userLetter" ]
+		elif [ "${ticTacToeDictionary[$a$b]}" != "$opponentLetter" ]
 		then
 			computerRightDiagonalPosition=$a$b;
 		fi;
@@ -174,18 +189,21 @@ checkForComputerRightDiagonalWinCell () {
 	getComputerWinningPosition $rightDiagonalCounter $computerRightDiagonalPosition;
 }
 
-#HERE COMPUTER WILL CHECK EACH ROW AND PLAY ACCORDINGLY TO WIN.
-checkForComputerRowWinCell () {
+#HERE COMPUTER WILL CHECK EACH ROW ELEMENTS AND PLAY ACCORDINGLY TO WIN OR BLOCK.
+checkForComputerRowWinBlockCell () {
+	playerLetter=$1;
+	opponentLetter=$2;
+
 	for (( a=1; a<=$ROWS; a++ ))
 	do
 		rowCounter=0;
 		computerRowPosition="";
 		for (( b=1; b<=$COLUMNS; b++ ))
 		do
-			if [ "${ticTacToeDictionary[$a$b]}" = "$computerLetter" ]
+			if [ "${ticTacToeDictionary[$a$b]}" = "$playerLetter" ]
 			then
 				((rowCounter++));
-			elif [ "${ticTacToeDictionary[$a$b]}" != "$userLetter" ]
+			elif [ "${ticTacToeDictionary[$a$b]}" != "$opponentLetter" ]
 			then
 				computerRowPosition=$a$b;
 			fi;
@@ -195,18 +213,21 @@ checkForComputerRowWinCell () {
 	done;
 }
 
-#HERE COMPUTER WILL CHECK EACH COLUMN AND PLAY ACCORDINGLY TO WIN.
-checkForComputerColumnWinCell () {
+#HERE COMPUTER WILL CHECK EACH COLUMN ELEMENTS AND PLAY ACCORDINGLY TO WIN OR BLOCK.
+checkForComputerColumnWinBlockCell () {
+	playerLetter=$1;
+	opponentLetter=$2;
+
 	for (( a=1; a<=$ROWS; a++ ))
 	do
 		columnCounter=0;
 		computerColumnPosition="";
 		for (( b=1; b<=$COLUMNS; b++ ))
 		do
-			if [ "${ticTacToeDictionary[$b$a]}" = "$computerLetter" ]
+			if [ "${ticTacToeDictionary[$b$a]}" = "$playerLetter" ]
 			then
 				((columnCounter++));
-			elif [ "${ticTacToeDictionary[$b$a]}" != "$userLetter" ]
+			elif [ "${ticTacToeDictionary[$b$a]}" != "$opponentLetter" ]
 			then
 				computerColumnPosition=$b$a;
 			fi;
@@ -216,23 +237,49 @@ checkForComputerColumnWinCell () {
 	done;
 }
 
-#HERE COMPUTER WILL PLAY THE MOVE TO WIN THE GAME.
-checkForComputerWinCell () {
-	computerPosition="";
-
-	computerPosition=$(checkForComputerLeftDiagonalWinCell);
+#HERE COMPUTER CHECKS IF HE IS WINNING WILL PLAY THAT MOVE TO WIN THE GAME.
+getComputerWinMove () {
+	computerPosition=$(checkForComputerLeftDiagonalWinBlockCell $computerLetter $userLetter);
 	if [ "$computerPosition" = "" ]
 	then
-		computerPosition=$(checkForComputerRightDiagonalWinCell);
+		computerPosition=$(checkForComputerRightDiagonalWinBlockCell $computerLetter $userLetter);
 		if [ "$computerPosition" = "" ]
 		then
-			computerPosition=$(checkForComputerRowWinCell);
+			computerPosition=$(checkForComputerRowWinBlockCell $computerLetter $userLetter);
 			if [ "$computerPosition" = ""  ]
 			then
-				computerPosition=$(checkForComputerColumnWinCell);
+				computerPosition=$(checkForComputerColumnWinBlockCell $computerLetter $userLetter);
 			fi;
 		fi;
 	fi;
+}
+
+#HERE COMPUTER PLAYS MOVE TO BLOCK THE USER FROM WINNING.
+getComputerBlockMove () {
+	if [ "$computerPosition" = "" ]
+	then
+		computerPosition=$(checkForComputerLeftDiagonalWinBlockCell $userLetter $computerLetter);
+		if [ "$computerPosition" = "" ]
+		then
+			computerPosition=$(checkForComputerRightDiagonalWinBlockCell $userLetter $computerLetter);
+			if [ "$computerPosition" = "" ]
+			then
+				computerPosition=$(checkForComputerRowWinBlockCell $userLetter $computerLetter);
+				if [ "$computerPosition" = "" ]
+				then
+					computerPosition=$(checkForComputerColumnWinBlockCell $userLetter $computerLetter);
+				fi;
+			fi;
+		fi;
+	fi;
+}
+
+#HERE COMPUTER WILL PLAY THE MOVE TO WIN THE GAME OR BLOCK THE USER FROM WINNING.
+checkForComputerWinCell () {
+	computerPosition="";
+
+	getComputerWinMove;
+	getComputerBlockMove;
 
 	echo $computerPosition;
 }
@@ -247,7 +294,7 @@ getComputerCellsByRandomValue () {
 getComputerCells () {
 	computerChoice="";
 
-	if [ $k -gt $((2*$ROWS-2)) ]
+	if [ $k -ge $((2*$ROWS-2)) ]
 	then
 		computerPosition=$(checkForComputerWinCell);
 		if [ "$computerPosition" != "" ]
@@ -302,7 +349,7 @@ checkWinCond () {
 	val=$1;  #rowValue, columnValue, leftDiagonalValue or rightDiagonalValue
 	message=$2;
 
-	if [ "$val" = "XXX" -o "$val" = "OOO" ]
+	if [ "$val" = "$winningXValue" -o "$val" = "$winningOValue" ]
 	then
 		echo "$message";
 		echo "YEAH $turn WIN!!!!!!";
@@ -395,7 +442,7 @@ playGame () {
 	do
 		playMove;
 		displayBoard;
-		if [ $k -gt $((2*$ROWS-2)) ]
+		if [ $k -ge $((2*$ROWS-2)) ]
 		then
 			checkForWin;
 		fi;
@@ -407,6 +454,7 @@ playGame () {
 }
 
 ticTacToeMain () {
+	assignWinningValues;
 	assignInitialValuesToBoard;
 	displayBoard;
 
