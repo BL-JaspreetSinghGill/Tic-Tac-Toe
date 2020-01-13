@@ -4,6 +4,7 @@ ROWS=3;
 COLUMNS=3;
 
 declare -A ticTacToeDictionary;
+declare -a cornerArray;
 
 assignWinningValues () {
 	winningXValue="";
@@ -274,12 +275,82 @@ getComputerBlockMove () {
 	fi;
 }
 
+getCornerRandomValue () {
+	echo $(( RANDOM%${#cornerArray[@]} ));
+}
+
+checkForValuesInCornerArray () {
+	if [ ${#cornerArray[@]} -gt 0 ]
+	then
+		for value in ${!cornerArray[@]}
+		do
+			unset cornerArray[value];
+		done
+	fi;
+}
+
+checkCornerValues () {
+	cornerCounter=0;
+	firstCornerValue="1""1";
+	secondCornerValue="1""$ROWS";
+	thirdCornerValue="$ROWS""1";
+	fourthCornerValue="$ROWS""$ROWS";
+
+	checkForValuesInCornerArray;
+
+	if [ "${ticTacToeDictionary[$firstCornerValue]}" != "$computerLetter" -a "${ticTacToeDictionary[$firstCornerValue]}" != "$userLetter" ]
+	then
+		cornerArray[$cornerCounter]="$firstCornerValue";
+		(( cornerCounter++ ));
+	fi;
+	if [ "${ticTacToeDictionary[$secondCornerValue]}" != "$computerLetter" -a "${ticTacToeDictionary[$secondCornerValue]}" != "$userLetter" ]
+	then
+		cornerArray[$cornerCounter]="$secondCornerValue";
+		(( cornerCounter++ ));
+	fi;
+	if [ "${ticTacToeDictionary[$thirdCornerValue]}" != "$computerLetter" -a "${ticTacToeDictionary[$thirdCornerValue]}" != "$userLetter" ]
+	then
+		cornerArray[$cornerCounter]="$thirdCornerValue";
+		(( cornerCounter++ ));
+	fi;
+	if [ "${ticTacToeDictionary[$fourthCornerValue]}" != "$computerLetter" -a "${ticTacToeDictionary[$fourthCornerValue]}" != "$userLetter" ]
+	then
+		cornerArray[$cornerCounter]="$fourthCornerValue";
+	fi;
+}
+
+getCornerPosition () {
+	cornerPosition="";
+
+	checkCornerValues;
+
+	if [ ${#cornerArray[@]} -gt 0 ]
+	then
+		cornerRandomValue=$(getCornerRandomValue);
+		cornerPosition="${cornerArray[$cornerRandomValue]}";
+	fi;
+
+	echo "$cornerPosition";
+}
+
+takeAvailableCorner () {
+	comPos=$1;
+
+	if [ "$comPos" = "" ]
+	then
+		computerPosition=$(getCornerPosition);
+	fi;
+
+	echo "$computerPosition";
+}
+
 #HERE COMPUTER WILL PLAY THE MOVE TO WIN THE GAME OR BLOCK THE USER FROM WINNING.
 checkForComputerWinCell () {
 	computerPosition="";
 
 	getComputerWinMove;
 	getComputerBlockMove;
+	computerPosition=$(takeAvailableCorner $computerPosition);
 
 	echo $computerPosition;
 }
@@ -304,7 +375,11 @@ getComputerCells () {
 			getComputerCellsByRandomValue;
 		fi;
 	else
-		getComputerCellsByRandomValue;
+		computerChoice=$(takeAvailableCorner $computerChoice);
+		if [ "$computerChoice" = "" ]
+		then
+			getComputerCellsByRandomValue;
+		fi;
 	fi;
 
 	choice="$computerChoice";
