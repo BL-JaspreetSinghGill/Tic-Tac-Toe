@@ -5,6 +5,7 @@ COLUMNS=3;
 
 declare -A ticTacToeDictionary;
 declare -a cornerArray;
+declare -a centreArray;
 
 assignWinningValues () {
 	winningXValue="";
@@ -14,6 +15,19 @@ assignWinningValues () {
 	do
 		winningXValue="$winningXValue""X";
 		winningOValue="$winningOValue""O";
+	done;
+}
+
+assignCentreValues () {
+	centreArrayCounter=0;
+
+	for (( a=2; a<$ROWS; a++ ))
+	do
+		for (( b=2; b<$ROWS; b++ ))
+		do
+			centreArray[$centreArrayCounter]="$a$b";
+			(( centreArrayCounter++ ));
+		done;
 	done;
 }
 
@@ -344,6 +358,61 @@ takeAvailableCorner () {
 	echo "$computerPosition";
 }
 
+getCentrePositionByRandom () {
+	echo $(( RANDOM%${#centreArray[@]} ))
+}
+
+checkValuePresentAtCentrePosition () {
+	centreValue=$1;
+	position=${centreArray[$centreValue]};
+
+	if [ "${ticTacToeDictionary[$position]}" = "$computerLetter" -o "${ticTacToeDictionary[$position]}" = "$userLetter" ]
+	then
+		centrePosition=$(getCentreValue);
+	else
+		centrePosition=$position;
+	fi;
+
+	echo $centrePosition;
+}
+
+getCentreValue () {
+	centreRandomValue=$(getCentrePositionByRandom);
+	centrePosition=$(checkValuePresentAtCentrePosition $centreRandomValue);
+
+	echo $centrePosition;
+}
+
+getCentreValueForOddRow () {
+	value=$(( $(( $ROWS+1 ))/2 ));
+	centreValue="$value$value";
+	if [ "${ticTacToeDictionary[$centreValue]}" = "$computerLetter" -o "${ticTacToeDictionary[$centreValue]}" = "$userLetter"  ]
+	then
+		centrePosition=$(getCentreValue);
+	else
+		centrePosition=$centreValue;
+	fi;
+
+	echo $centrePosition;
+}
+
+getCentrePosition () {
+	#if [ $(( $ROWS%2 )) -eq 0 ]
+	#then
+		computerPosition=$(getCentreValue);
+	#else
+	#	computerPosition=$(getCentreValueForOddRow);
+	#fi;
+
+	echo $computerPosition;
+}
+
+takeCentre () {
+	computerChoice=$(getCentrePosition);
+
+	echo "$computerChoice";
+}
+
 #HERE COMPUTER WILL PLAY THE MOVE TO WIN THE GAME OR BLOCK THE USER FROM WINNING.
 checkForComputerWinCell () {
 	computerPosition="";
@@ -351,6 +420,10 @@ checkForComputerWinCell () {
 	getComputerWinMove;
 	getComputerBlockMove;
 	computerPosition=$(takeAvailableCorner $computerPosition);
+	if [ "$computerPosition" = "" ]
+	then
+		computerPosition=$(takeCentre);
+	fi;
 
 	echo $computerPosition;
 }
@@ -378,7 +451,11 @@ getComputerCells () {
 		computerChoice=$(takeAvailableCorner $computerChoice);
 		if [ "$computerChoice" = "" ]
 		then
-			getComputerCellsByRandomValue;
+			computerChoice=$(takeCentre);
+			if [ "$computerChoice" = "" ]
+			then
+				getComputerCellsByRandomValue;
+			fi;
 		fi;
 	fi;
 
@@ -417,7 +494,7 @@ checkForTurn () {
 
 playMove () {
 	$player;
-   storeInDictionary $choice $letter;
+	storeInDictionary $choice $letter;
 }
 
 checkWinCond () {
@@ -530,6 +607,7 @@ playGame () {
 
 ticTacToeMain () {
 	assignWinningValues;
+	assignCentreValues;
 	assignInitialValuesToBoard;
 	displayBoard;
 
